@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #f8fafc;
+  font-family: sans-serif;
+  overflow-x: hidden; /* Prevent horizontal scrollbar from the slider */
+}
+
+/* --- 1. INFINITE LOGO SLIDER --- */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%); /* Move exactly half the width */
+  }
+}
+
+.animate-scroll {
+  display: flex;
+  width: max-content; /* Force content to stay in one long line */
+  animation: scroll 25s linear infinite;
+}
+
+.animate-scroll:hover {
+  animation-play-state: paused;
+}
+
+/* --- 2. SMOOTH PAGE SCROLLING --- */
+html {
+  scroll-behavior: smooth;
+}
+
+/* --- 3. FADE IN UP --- */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
