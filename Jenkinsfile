@@ -15,31 +15,9 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
-            steps {
-                dir('app') {
-                    sh 'npm install'
-                }
-            }
-        }
+        // Stages for explicit npm install/build removed to rely on Docker multi-stage build
+        // This avoids "npm not found" errors on the Jenkins agent
 
-        stage('Build Application') {
-            steps {
-                dir('app') {
-                    sh 'npm run build'
-                }
-            }
-        }
-
-        stage('Code Quality Analysis') {
-             steps {
-                 // Placeholder for SonarQube
-                 echo "Skipping SonarQube for now"
-                 // withSonarQubeEnv('SonarQube') {
-                 //    sh 'npm run lint'
-                 // }
-             }
-        }
 
         stage('Docker Build & Push') {
             steps {
