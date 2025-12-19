@@ -21,12 +21,20 @@ pipeline {
 
         stage('Docker Build & Push') {
             steps {
-                script {
-                    docker.withRegistry('', registryCredential) {
-                         // Build using the Dockerfile in the root, context is root
-                         def customImage = docker.build(registry + ":${env.BUILD_ID}")
-                         customImage.push()
-                         customImage.push('latest')
+                container('dind') {
+                    script {
+                        withCredentials([usernamePassword(credentialsId: registryCredential, passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                            // Login to registry
+                            sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS} ${registry.split('/')[0]}"
+                            
+                            // Build and Push
+                            sh "docker build -t ${registry}:${env.BUILD_ID} ."
+                            sh "docker push ${registry}:${env.BUILD_ID}"
+                            
+                            // Push latest tag
+                            sh "docker tag ${registry}:${env.BUILD_ID} ${registry}:latest"
+                            sh "docker push ${registry}:latest"
+                        }
                     }
                 }
             }
