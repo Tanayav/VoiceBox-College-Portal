@@ -5,13 +5,6 @@ pipeline {
             yaml '''
 kind: Pod
 spec:
-  hostAliases:
-  - ip: "192.168.20.250"
-    hostnames:
-    - "nexus.imcc.com"
-  - ip: "192.168.20.251"
-    hostnames:
-    - "sonarqube.imcc.com"
   containers:
   - name: nodejs
     image: node:22-alpine
@@ -22,22 +15,40 @@ spec:
     image: docker:dind
     securityContext:
       privileged: true
-    args:
-    - --insecure-registry=nexus.imcc.com
+    env:
+    - name: DOCKER_TLS_CERTDIR
+      value: ""
+    volumeMounts:
+    - name: docker-config
+      mountPath: /etc/docker/daemon.json
+      subPath: daemon.json
   - name: sonar-scanner
     image: sonarsource/sonar-scanner-cli:latest
     command:
     - cat
     tty: true
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command:
+    - cat
+    tty: true
+    securityContext:
+      runAsUser: 0
+  volumes:
+  - name: docker-config
+    configMap:
+      name: docker-daemon-config
 '''
         }
     }
     
     environment {
-        // PLEASE UPDATE THESE VALUES
-        registry = "nexus.imcc.com/vbx-app" 
+        // Internal K8s Service Address from reference
+        registry = "nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/vbx-app" 
+        // Note: Using student credentials as provided
         registryCredential = "nexus-credentials"
         kubeconfigId = "k8s-kubeconfig"
+        NAMESPACE = 'jenkins' // Assuming deployment is in jenkins namespace or similar
     }
 
     stages {
@@ -52,7 +63,7 @@ spec:
                 container('nodejs') {
                     dir('app') {
                         sh 'npm install'
-                        // sh 'npm test' // Uncomment if tests exist
+                        // sh 'npm test' 
                     }
                 }
             }
@@ -61,10 +72,22 @@ spec:
         stage('Login to Docker Registry') {
             steps {
                 container('dind') {
-                    script {
-                        withCredentials([usernamePassword(credentialsId: registryCredential, passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
-                            sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS} ${registry.split('/')[0]}"
-                        }
+                    // Check for docker daemon readiness
+                    sh '''
+                        timeout=60
+                        while ! docker info > /dev/null 2>&1; do
+                            if [ $timeout -le 0 ]; then
+                                echo "Timed out waiting for Docker daemon"
+                                exit 1
+                            fi
+                            echo "Waiting for docker daemon..."
+                            sleep 1
+                            timeout=$((timeout - 1))
+                        done
+                    '''
+                    // Login using the internal registry address
+                    withCredentials([usernamePassword(credentialsId: registryCredential, passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                        sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS} ${registry.split('/')[0]}"
                     }
                 }
             }
@@ -73,7 +96,9 @@ spec:
         stage('Build Docker Image') {
             steps {
                 container('dind') {
+                    // Build explicitly tagging latest
                     sh "docker build -t ${registry}:${env.BUILD_ID} ."
+                    sh "docker tag ${registry}:${env.BUILD_ID} ${registry}:latest"
                 }
             }
         }
@@ -81,8 +106,9 @@ spec:
         stage('SonarQube Analysis') {
             steps {
                 container('sonar-scanner') {
-                    script {
-                        sh "sonar-scanner -Dsonar.host.url=http://sonarqube.imcc.com/ -Dsonar.login=student -Dsonar.password=Imccstudent@2025"
+                     script {
+                        // Use the internal URL found in the reference
+                        sh "sonar-scanner -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 -Dsonar.login=student -Dsonar.password=Imccstudent@2025"
                     }
                 }
             }
@@ -91,9 +117,7 @@ spec:
         stage('Build - Tag - Push') {
             steps {
                 container('dind') {
-                    // Tagging and Pushing
                     sh "docker push ${registry}:${env.BUILD_ID}"
-                    sh "docker tag ${registry}:${env.BUILD_ID} ${registry}:latest"
                     sh "docker push ${registry}:latest"
                 }
             }
@@ -101,12 +125,30 @@ spec:
 
         stage('Deploy Application') {
             steps {
-                withKubeConfig([credentialsId: kubeconfigId]) {
-                    sh 'kubectl apply -f k8s/'
-                    // Force update the image to the new tag
-                    sh "kubectl set image deployment/vbx-deployment vbx-container=${registry}:${env.BUILD_ID} --record"
-                    // Verify deployment
-                    sh "kubectl rollout status deployment/vbx-deployment"
+                container('kubectl') {
+                    withKubeConfig([credentialsId: kubeconfigId]) {
+                        script {
+                             sh """
+                                # Update image in deployment yaml files if needed, or set image directly
+                                
+                                # Apply manifests
+                                kubectl apply -f k8s/
+                                
+                                # Force update image
+                                kubectl set image deployment/vbx-deployment vbx-container=${registry}:${env.BUILD_ID} --record
+                                
+                                # Wait for rollout
+                                if kubectl rollout status deployment/vbx-deployment --timeout=5m; then
+                                    echo "Rollout successful!"
+                                else
+                                    echo "Rollout failed. Debugging..."
+                                    kubectl get pods
+                                    kubectl describe deployment vbx-deployment
+                                    exit 1
+                                fi
+                            """
+                        }
+                    }
                 }
             }
         }
