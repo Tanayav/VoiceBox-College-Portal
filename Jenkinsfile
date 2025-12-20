@@ -10,7 +10,7 @@ metadata:
 spec:
   containers:
   - name: jnlp
-    image: jenkins/inbound-agent:3148.v532a_7e715ee3-1
+    image: jenkins/inbound-agent:latest-jdk17
     args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
     resources:
       requests:
