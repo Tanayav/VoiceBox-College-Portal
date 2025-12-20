@@ -18,10 +18,11 @@ spec:
     env:
     - name: DOCKER_TLS_CERTDIR
       value: ""
-    volumeMounts:
-    - name: docker-config
-      mountPath: /etc/docker/daemon.json
-      subPath: daemon.json
+    command:
+    - dockerd
+    - --host=unix:///var/run/docker.sock
+    - --host=tcp://0.0.0.0:2375
+    - --insecure-registry=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085
   - name: sonar-scanner
     image: sonarsource/sonar-scanner-cli:latest
     command:
@@ -34,10 +35,6 @@ spec:
     tty: true
     securityContext:
       runAsUser: 0
-  volumes:
-  - name: docker-config
-    configMap:
-      name: docker-daemon-config
 '''
         }
     }
