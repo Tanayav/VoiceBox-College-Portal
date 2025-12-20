@@ -42,7 +42,7 @@ spec:
     - dockerd
     - --host=unix:///var/run/docker.sock
     - --host=tcp://0.0.0.0:2375
-    - --insecure-registry=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085
+    - --insecure-registry=0.0.0.0/0
     resources:
       requests:
         memory: "64Mi"
