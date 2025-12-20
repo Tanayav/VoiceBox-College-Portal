@@ -17,10 +17,10 @@ spec:
     resources:
       requests:
         memory: "128Mi"
-        cpu: "100m"
+        cpu: "50m"
       limits:
         memory: "256Mi"
-        cpu: "500m"
+        cpu: "200m"
   - name: dind
     image: docker:dind
     securityContext:
@@ -35,8 +35,8 @@ spec:
     - --insecure-registry=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085
     resources:
       requests:
-        memory: "256Mi"
-        cpu: "200m"
+        memory: "128Mi"
+        cpu: "50m"
       limits:
         memory: "512Mi"
         cpu: "500m"
@@ -48,10 +48,10 @@ spec:
     resources:
       requests:
         memory: "128Mi"
-        cpu: "100m"
+        cpu: "50m"
       limits:
         memory: "256Mi"
-        cpu: "250m"
+        cpu: "200m"
   - name: kubectl
     image: bitnami/kubectl:latest
     command:
@@ -62,7 +62,7 @@ spec:
     resources:
       requests:
         memory: "64Mi"
-        cpu: "50m"
+        cpu: "10m"
       limits:
         memory: "128Mi"
         cpu: "100m"
