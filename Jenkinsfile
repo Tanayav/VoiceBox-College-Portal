@@ -22,8 +22,7 @@ spec:
     image: docker:dind
     securityContext:
       privileged: true
-    command:
-    - dockerd-entrypoint.sh
+    args:
     - --insecure-registry=nexus.imcc.com
 '''
         }
