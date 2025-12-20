@@ -12,6 +12,12 @@ spec:
   - name: jnlp
     image: jenkins/inbound-agent:latest-jdk17
     args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
+    readinessProbe:
+      exec:
+        command:
+        - "true"
+      initialDelaySeconds: 5
+      periodSeconds: 10
     resources:
       requests:
         memory: "16Mi"
@@ -24,6 +30,12 @@ spec:
     command:
     - cat
     tty: true
+    readinessProbe:
+      exec:
+        command:
+        - "true"
+      initialDelaySeconds: 5
+      periodSeconds: 10
     resources:
       requests:
         memory: "32Mi"
@@ -43,6 +55,11 @@ spec:
     - --host=unix:///var/run/docker.sock
     - --host=tcp://0.0.0.0:2375
     - --insecure-registry=0.0.0.0/0
+    readinessProbe:
+      tcpSocket:
+        port: 2375
+      initialDelaySeconds: 5
+      periodSeconds: 10
     resources:
       requests:
         memory: "64Mi"
@@ -55,6 +72,12 @@ spec:
     command:
     - cat
     tty: true
+    readinessProbe:
+      exec:
+        command:
+        - "true"
+      initialDelaySeconds: 5
+      periodSeconds: 10
     resources:
       requests:
         memory: "32Mi"
@@ -69,6 +92,12 @@ spec:
     tty: true
     securityContext:
       runAsUser: 0
+    readinessProbe:
+      exec:
+        command:
+        - "true"
+      initialDelaySeconds: 5
+      periodSeconds: 10
     resources:
       requests:
         memory: "32Mi"
