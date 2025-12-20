@@ -9,6 +9,16 @@ metadata:
     some-label: some-value
 spec:
   containers:
+  - name: jnlp
+    image: jenkins/inbound-agent:3148.v532a_7e715ee3-1
+    args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "10m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
   - name: nodejs
     image: node:22-alpine
     command:
@@ -17,7 +27,7 @@ spec:
     resources:
       requests:
         memory: "64Mi"
-        cpu: "1m"
+        cpu: "10m"
       limits:
         memory: "256Mi"
         cpu: "200m"
@@ -36,7 +46,7 @@ spec:
     resources:
       requests:
         memory: "64Mi"
-        cpu: "1m"
+        cpu: "10m"
       limits:
         memory: "512Mi"
         cpu: "500m"
@@ -48,7 +58,7 @@ spec:
     resources:
       requests:
         memory: "64Mi"
-        cpu: "1m"
+        cpu: "10m"
       limits:
         memory: "256Mi"
         cpu: "250m"
@@ -62,7 +72,7 @@ spec:
     resources:
       requests:
         memory: "32Mi"
-        cpu: "1m"
+        cpu: "10m"
       limits:
         memory: "128Mi"
         cpu: "100m"
