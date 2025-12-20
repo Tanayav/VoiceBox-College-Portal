@@ -12,6 +12,12 @@ spec:
   - ip: "192.168.20.251"
     hostnames:
     - "sonarqube.imcc.com"
+  containers:
+  - name: nodejs
+    image: node:18-alpine
+    command:
+    - cat
+    tty: true
 '''
         }
     }
@@ -24,28 +30,48 @@ spec:
     }
 
     stages {
-        stage('Checkout') {
+        stage('Declarative: Checkout SCM') {
             steps {
                 checkout scm
             }
         }
 
-        stage('Build') {
+        stage('Install Dependencies & Test') {
             steps {
-                container('jnlp') {
-                    echo 'Building application...'
-                    // Actual build happens in Docker stage, this is a placeholder
-                    // or could be used for unit tests if environment allows
+                container('nodejs') {
+                    dir('app') {
+                        sh 'npm install'
+                        // sh 'npm test' // Uncomment if tests exist
+                    }
                 }
             }
         }
 
-        stage('Analyze') {
+        stage('Login to Docker Registry') {
+            steps {
+                container('dind') {
+                    script {
+                        withCredentials([usernamePassword(credentialsId: registryCredential, passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                            sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS} ${registry.split('/')[0]}"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                container('dind') {
+                    sh "docker build -t ${registry}:${env.BUILD_ID} ."
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
             steps {
                 container('jnlp') {
                     script {
-                        // Assuming standard scanner installation name 'SonarQubecanner' or similar
-                        // If this name is wrong, it will fail. Trying standard fallback path.
+                        // Assuming standard scanner installation
                         def scannerHome = tool name: 'SonarQubeScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                         withSonarQubeEnv('SonarQube') { 
                             sh "${scannerHome}/bin/sonar-scanner"
@@ -55,28 +81,18 @@ spec:
             }
         }
 
-        stage('Docker Build & Push') {
+        stage('Build - Tag - Push') {
             steps {
                 container('dind') {
-                    script {
-                        withCredentials([usernamePassword(credentialsId: registryCredential, passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
-                            // Login to registry
-                            sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS} ${registry.split('/')[0]}"
-                            
-                            // Build and Push
-                            sh "docker build -t ${registry}:${env.BUILD_ID} ."
-                            sh "docker push ${registry}:${env.BUILD_ID}"
-                            
-                            // Push latest tag
-                            sh "docker tag ${registry}:${env.BUILD_ID} ${registry}:latest"
-                            sh "docker push ${registry}:latest"
-                        }
-                    }
+                    // Tagging and Pushing
+                    sh "docker push ${registry}:${env.BUILD_ID}"
+                    sh "docker tag ${registry}:${env.BUILD_ID} ${registry}:latest"
+                    sh "docker push ${registry}:latest"
                 }
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Deploy Application') {
             steps {
                 withKubeConfig([credentialsId: kubeconfigId]) {
                     sh 'kubectl apply -f k8s/'
