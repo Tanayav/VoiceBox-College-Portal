@@ -20,7 +20,7 @@ spec:
         memory: "256Mi"
         cpu: "500m"
   - name: nodejs
-    image: node:22-alpine
+    image: public.ecr.aws/docker/library/node:22-alpine
     command:
     - cat
     tty: true
@@ -32,7 +32,7 @@ spec:
         memory: "256Mi"
         cpu: "200m"
   - name: dind
-    image: docker:dind
+    image: public.ecr.aws/docker/library/docker:dind
     securityContext:
       privileged: true
     env:
@@ -63,7 +63,7 @@ spec:
         memory: "256Mi"
         cpu: "250m"
   - name: kubectl
-    image: bitnami/kubectl:latest
+    image: public.ecr.aws/bitnami/kubectl:latest
     command:
     - cat
     tty: true
