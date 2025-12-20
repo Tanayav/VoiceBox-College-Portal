@@ -9,6 +9,9 @@ spec:
   - ip: "192.168.20.250"
     hostnames:
     - "nexus.imcc.com"
+  - ip: "192.168.20.251"
+    hostnames:
+    - "sonarqube.imcc.com"
 '''
         }
     }
@@ -27,9 +30,30 @@ spec:
             }
         }
 
-        // Stages for explicit npm install/build removed to rely on Docker multi-stage build
-        // This avoids "npm not found" errors on the Jenkins agent
+        stage('Build') {
+            steps {
+                container('jnlp') {
+                    echo 'Building application...'
+                    // Actual build happens in Docker stage, this is a placeholder
+                    // or could be used for unit tests if environment allows
+                }
+            }
+        }
 
+        stage('Analyze') {
+            steps {
+                container('jnlp') {
+                    script {
+                        // Assuming standard scanner installation name 'SonarQubecanner' or similar
+                        // If this name is wrong, it will fail. Trying standard fallback path.
+                        def scannerHome = tool name: 'SonarQubeScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                        withSonarQubeEnv('SonarQube') { 
+                            sh "${scannerHome}/bin/sonar-scanner"
+                        }
+                    }
+                }
+            }
+        }
 
         stage('Docker Build & Push') {
             steps {
