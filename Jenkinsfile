@@ -82,9 +82,7 @@ spec:
             steps {
                 container('sonar-scanner') {
                     script {
-                        withSonarQubeEnv('SonarQube') { 
-                            sh "sonar-scanner"
-                        }
+                        sh "sonar-scanner -Dsonar.host.url=http://sonarqube.imcc.com/ -Dsonar.login=student -Dsonar.password=Imccstudent@2025"
                     }
                 }
             }
