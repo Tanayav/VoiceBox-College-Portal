@@ -1,4 +1,5 @@
 pipeline {
+    agent {
         kubernetes {
             inheritFrom 'default'
             yaml '''
@@ -19,31 +20,52 @@ spec:
         cpu: "100m"
       limits:
         memory: "256Mi"
+        cpu: "500m"
+  - name: dind
+    image: docker:dind
+    securityContext:
+      privileged: true
+    env:
+    - name: DOCKER_TLS_CERTDIR
+      value: ""
+    command:
+    - dockerd
+    - --host=unix:///var/run/docker.sock
+    - --host=tcp://0.0.0.0:2375
+    - --insecure-registry=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085
+    resources:
+      requests:
+        memory: "256Mi"
         cpu: "200m"
-#   - name: dind
-#     image: docker:dind
-#     securityContext:
-#       privileged: true
-#     env:
-#     - name: DOCKER_TLS_CERTDIR
-#       value: ""
-#     command:
-#     - dockerd
-#     - --host=unix:///var/run/docker.sock
-#     - --host=tcp://0.0.0.0:2375
-#     - --insecure-registry=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085
-#   - name: sonar-scanner
-#     image: sonarsource/sonar-scanner-cli:latest
-#     command:
-#     - cat
-#     tty: true
-#   - name: kubectl
-#     image: bitnami/kubectl:latest
-#     command:
-#     - cat
-#     tty: true
-#     securityContext:
-#       runAsUser: 0
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+  - name: sonar-scanner
+    image: sonarsource/sonar-scanner-cli:latest
+    command:
+    - cat
+    tty: true
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "250m"
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command:
+    - cat
+    tty: true
+    securityContext:
+      runAsUser: 0
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
 '''
         }
     }
