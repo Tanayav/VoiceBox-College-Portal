@@ -78,7 +78,7 @@ spec:
                 container('jnlp') {
                     script {
                         // Assuming standard scanner installation
-                        def scannerHome = tool name: 'SonarQubeScanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                        def scannerHome = tool name: 'scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                         withSonarQubeEnv('SonarQube') { 
                             sh "${scannerHome}/bin/sonar-scanner"
                         }
