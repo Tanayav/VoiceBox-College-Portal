@@ -2,12 +2,12 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: vbx-ingress
-  namespace: default
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-  - http:
+  - host: vbx.imcc.com
+    http:
       paths:
       - path: /
         pathType: Prefix
