@@ -16,8 +16,8 @@ spec:
     tty: true
     resources:
       requests:
-        memory: "128Mi"
-        cpu: "50m"
+        memory: "64Mi"
+        cpu: "1m"
       limits:
         memory: "256Mi"
         cpu: "200m"
@@ -35,8 +35,8 @@ spec:
     - --insecure-registry=nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085
     resources:
       requests:
-        memory: "128Mi"
-        cpu: "50m"
+        memory: "64Mi"
+        cpu: "1m"
       limits:
         memory: "512Mi"
         cpu: "500m"
@@ -47,11 +47,11 @@ spec:
     tty: true
     resources:
       requests:
-        memory: "128Mi"
-        cpu: "50m"
+        memory: "64Mi"
+        cpu: "1m"
       limits:
         memory: "256Mi"
-        cpu: "200m"
+        cpu: "250m"
   - name: kubectl
     image: bitnami/kubectl:latest
     command:
@@ -61,8 +61,8 @@ spec:
       runAsUser: 0
     resources:
       requests:
-        memory: "64Mi"
-        cpu: "10m"
+        memory: "32Mi"
+        cpu: "1m"
       limits:
         memory: "128Mi"
         cpu: "100m"
