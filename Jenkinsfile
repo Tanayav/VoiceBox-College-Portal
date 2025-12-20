@@ -1,9 +1,21 @@
 pipeline {
-    agent any
+    agent {
+        kubernetes {
+            inheritFrom 'default'
+            yaml '''
+kind: Pod
+spec:
+  hostAliases:
+  - ip: "192.168.20.250"
+    hostnames:
+    - "nexus.imcc.com"
+'''
+        }
+    }
     
     environment {
         // PLEASE UPDATE THESE VALUES
-        registry = "192.168.20.250/vbx-app" 
+        registry = "nexus.imcc.com/vbx-app" 
         registryCredential = "nexus-credentials"
         kubeconfigId = "k8s-kubeconfig"
     }
