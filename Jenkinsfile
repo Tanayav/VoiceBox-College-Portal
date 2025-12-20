@@ -3,7 +3,7 @@ pipeline {
     
     environment {
         // PLEASE UPDATE THESE VALUES
-        registry = "nexus.imcc.com/vbx-app" 
+        registry = "192.168.20.250/vbx-app" 
         registryCredential = "nexus-credentials"
         kubeconfigId = "k8s-kubeconfig"
     }
