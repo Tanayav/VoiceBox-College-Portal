@@ -84,18 +84,12 @@ spec:
         // Project Specific Configs
         IMAGE_REGISTRY = 'nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085'
         IMAGE_PATH = 'my-repository/vbx-app'
-        NAMESPACE = 'jenkins'
+        NAMESPACE = 'voicebox'
         registryCredential = "nexus-credentials"
         kubeconfigId = "k8s-kubeconfig"
     }
 
     stages {
-        stage('Declarative: Checkout SCM') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('Install Dependencies & Test') {
             steps {
                 container('nodejs') {
@@ -110,6 +104,7 @@ spec:
         stage('Login to Docker Registry') {
             steps {
                 container('dind') {
+                    sh 'docker --version'
                     // Check for docker daemon readiness
                     sh '''
                         timeout=60
@@ -134,9 +129,8 @@ spec:
         stage('Build Docker Image') {
             steps {
                 container('dind') {
-                    // Build explicitly tagging latest
-                    sh "docker build -t ${IMAGE_REGISTRY}/${IMAGE_PATH}:${env.BUILD_ID} ."
-                    sh "docker tag ${IMAGE_REGISTRY}/${IMAGE_PATH}:${env.BUILD_ID} ${IMAGE_REGISTRY}/${IMAGE_PATH}:latest"
+                    sh "docker build -t vbx-app:latest ."
+                    sh "docker image ls"
                 }
             }
         }
@@ -145,8 +139,15 @@ spec:
             steps {
                 container('sonar-scanner') {
                      script {
-                        // Use the internal URL found in the reference
-                        sh "sonar-scanner -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 -Dsonar.login=student -Dsonar.password=Imccstudent@2025"
+                        sh """
+                        sonar-scanner \
+                            -Dsonar.projectKey=vbx_app_project \
+                            -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
+                            -Dsonar.login=student \
+                            -Dsonar.password=Imccstudent@2025 \
+                            -Dsonar.sources=. \
+                             -Dsonar.exclusions=**/node_modules/**,**/dist/**
+                        """
                     }
                 }
             }
@@ -155,7 +156,7 @@ spec:
         stage('Build - Tag - Push') {
             steps {
                 container('dind') {
-                    sh "docker push ${IMAGE_REGISTRY}/${IMAGE_PATH}:${env.BUILD_ID}"
+                    sh "docker tag vbx-app:latest ${IMAGE_REGISTRY}/${IMAGE_PATH}:latest"
                     sh "docker push ${IMAGE_REGISTRY}/${IMAGE_PATH}:latest"
                 }
             }
@@ -166,33 +167,48 @@ spec:
                 container('kubectl') {
                     withCredentials([file(credentialsId: kubeconfigId, variable: 'KUBECONFIG')]) {
                         script {
-                             sh """
-                                # Apply manifests
-                                # Update image in deployment if needed (though usually handled by tags if manifest uses latest, or set image)
-                                
-                                # Create namespace if not exists (dry-run trick)
-                                kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
-                                
-                                # Force delete old deployment to clear stuck/zombie pods (Reference Logic)
-                                kubectl delete deployment vbx-deployment -n ${NAMESPACE} --ignore-not-found=true
-                                
-                                # Apply manifests
-                                kubectl apply -f k8s/ -n ${NAMESPACE}
-                                
-                                # Force update image to current build ID
-                                kubectl set image deployment/vbx-deployment vbx-container=${IMAGE_REGISTRY}/${IMAGE_PATH}:${env.BUILD_ID} -n ${NAMESPACE} --record
-                                
-                                # Wait for rollout
-                                if kubectl rollout status deployment/vbx-deployment -n ${NAMESPACE} --timeout=5m; then
-                                    echo "Rollout successful!"
-                                else
-                                    echo "Rollout failed. Debugging..."
-                                    kubectl get pods -n ${NAMESPACE}
+                            dir('k8s') {
+                                sh """
+                                    # ===== DEBUG: Find Nexus IP =====
+                                    echo "=== Looking for Nexus Service IP ==="
+                                    kubectl get svc -n nexus || true
+                                    kubectl get svc -A | grep nexus || true
+                                    
+                                    # Create namespace if not exists
+                                    kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+                                    
+                                    # Force delete old deployment to clear stuck/zombie pods
+                                    kubectl delete deployment vbx-deployment -n ${NAMESPACE} --ignore-not-found=true
+                                    
+                                    # Apply deployment, service, ingress
+                                    kubectl apply -f . -n ${NAMESPACE}
+
+                                    # ===== DEBUG: Show what got created =====
+                                    echo "=== Deployment created ==="
                                     kubectl describe deployment vbx-deployment -n ${NAMESPACE}
-                                    kubectl describe pods -n ${NAMESPACE}
-                                    exit 1
-                                fi
-                            """
+                                    
+                                    echo "=== Initial pod status ==="
+                                    kubectl get pods -n ${NAMESPACE} -o wide
+                                    
+                                    # ===== Wait for rollout with diagnostics =====
+                                    if kubectl rollout status deployment/vbx-deployment -n ${NAMESPACE} --timeout=10m; then
+                                        echo "Rollout successful!"
+                                    else
+                                        echo "Rollout failed or timed out. Collecting debug info..."
+                                        echo "=== Final pod status ==="
+                                        kubectl get pods -n ${NAMESPACE} -o wide
+                                        
+                                        echo "=== Pod events ==="
+                                        kubectl describe pods -n ${NAMESPACE}
+                                        
+                                        echo "=== Deployment events ==="
+                                        kubectl describe deployment vbx-deployment -n ${NAMESPACE}
+                                        
+                                        # Fail the pipeline
+                                        exit 1
+                                    fi
+                                """
+                            }
                         }
                     }
                 }
