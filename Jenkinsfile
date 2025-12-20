@@ -14,10 +14,17 @@ spec:
     - "sonarqube.imcc.com"
   containers:
   - name: nodejs
-    image: node:18-alpine
+    image: node:22-alpine
     command:
     - cat
     tty: true
+  - name: dind
+    image: docker:dind
+    securityContext:
+      privileged: true
+    command:
+    - dockerd-entrypoint.sh
+    - --insecure-registry=nexus.imcc.com
 '''
         }
     }
