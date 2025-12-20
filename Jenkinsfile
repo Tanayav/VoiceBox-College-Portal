@@ -1,7 +1,7 @@
 pipeline {
     agent {
         kubernetes {
-            // inheritFrom 'default'
+            inheritFrom ''
             yaml '''
 kind: Pod
 metadata:
