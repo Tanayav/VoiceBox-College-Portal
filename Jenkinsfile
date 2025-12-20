@@ -126,7 +126,7 @@ spec:
         stage('Deploy Application') {
             steps {
                 container('kubectl') {
-                    withKubeConfig([credentialsId: kubeconfigId]) {
+                    withCredentials([file(credentialsId: kubeconfigId, variable: 'KUBECONFIG')]) {
                         script {
                              sh """
                                 # Update image in deployment yaml files if needed, or set image directly
