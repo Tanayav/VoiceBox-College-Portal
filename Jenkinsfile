@@ -82,7 +82,7 @@ spec:
 
     environment {
         // Project Specific Configs
-        IMAGE_REGISTRY = 'nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085'
+        IMAGE_REGISTRY = 'nexus.imcc.com'
         IMAGE_PATH = 'my-repository/vbx-app'
         NAMESPACE = 'voicebox'
         registryCredential = "nexus-credentials"
@@ -142,7 +142,7 @@ spec:
                         sh """
                         sonar-scanner \
                             -Dsonar.projectKey=vbx_app_project \
-                            -Dsonar.host.url=http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000 \
+                            -Dsonar.host.url=http://sonarqube.imcc.com \
                             -Dsonar.login=student \
                             -Dsonar.password=Imccstudent@2025 \
                             -Dsonar.sources=. \
