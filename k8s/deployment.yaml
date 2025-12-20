@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: vbx-container
-        image: nexus.imcc.com/vbx-app:latest
+        image: nexus.imcc.com/my-repository/vbx-app:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80

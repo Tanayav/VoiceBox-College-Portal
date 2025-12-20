@@ -83,7 +83,7 @@ spec:
     environment {
         // Project Specific Configs
         IMAGE_REGISTRY = 'nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085'
-        IMAGE_PATH = 'vbx-app'
+        IMAGE_PATH = 'my-repository/vbx-app'
         NAMESPACE = 'jenkins'
         registryCredential = "nexus-credentials"
         kubeconfigId = "k8s-kubeconfig"
