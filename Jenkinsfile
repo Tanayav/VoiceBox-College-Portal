@@ -14,8 +14,8 @@ spec:
     args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
     resources:
       requests:
-        memory: "64Mi"
-        cpu: "10m"
+        memory: "16Mi"
+        cpu: "2m"
       limits:
         memory: "256Mi"
         cpu: "500m"

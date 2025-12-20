@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: vbx-container
-        image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/my-repository/vbx-app:latest
+        image: nexus.imcc.com/my-repository/vbx-app:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80
