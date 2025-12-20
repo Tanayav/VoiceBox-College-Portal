@@ -24,6 +24,11 @@ spec:
       privileged: true
     args:
     - --insecure-registry=nexus.imcc.com
+  - name: sonar-scanner
+    image: sonarsource/sonar-scanner-cli:latest
+    command:
+    - cat
+    tty: true
 '''
         }
     }
@@ -75,12 +80,10 @@ spec:
 
         stage('SonarQube Analysis') {
             steps {
-                container('jnlp') {
+                container('sonar-scanner') {
                     script {
-                        // Assuming standard scanner installation
-                        def scannerHome = tool name: 'scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                         withSonarQubeEnv('SonarQube') { 
-                            sh "${scannerHome}/bin/sonar-scanner"
+                            sh "sonar-scanner"
                         }
                     }
                 }
